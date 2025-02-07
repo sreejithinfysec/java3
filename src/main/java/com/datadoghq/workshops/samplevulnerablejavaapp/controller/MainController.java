@@ -31,19 +31,22 @@ public class MainController {
   @Autowired
   private FileService fileService;
 
-  @RequestMapping(method=RequestMethod.POST, value="/test-domain", consumes="application/json")
-  public ResponseEntity<String> testDomain(@RequestBody DomainTestRequest request) {
+@RequestMapping(method=RequestMethod.POST, value="/test-domain", consumes="application/json")
+public ResponseEntity<String> testDomain(@RequestBody DomainTestRequest request) {
     log.info("Testing domain " + request.domainName);
     try {
-      String result = domainTestService.testDomain(request.domainName);
-      return new ResponseEntity<>(result, HttpStatus.OK);
-    } catch(InvalidDomainException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-    } catch (UnableToTestDomainException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    } catch(Exception e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        String sql = "SELECT * FROM domains WHERE name = ?";
+        try (PreparedStatement ps = dataSource.getConnection().prepareStatement(sql)) {
+            ps.setString(1, request.domainName);
+            try (ResultSet rs = ps.executeQuery()) {
+                // Process the result set
+            }
+        }
+    } catch(SQLException e) {
+        // Handle SQL exceptions
     }
+}
+
   }
 
   @RequestMapping(method=RequestMethod.POST, value="/test-website", consumes="application/json")
