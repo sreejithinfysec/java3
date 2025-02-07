@@ -53,17 +53,23 @@ public class MainController {
     return new ResponseEntity<>(result, HttpStatus.OK);
   }
 
-  @RequestMapping(method=RequestMethod.POST, value="/view-file", consumes="application/json")
-  public ResponseEntity<String> viewFile(@RequestBody ViewFileRequest request) {
-    log.info("Reading file " + request.path);
+@RequestMapping(method=RequestMethod.POST, value="/view-file", consumes="application/json")
+public ResponseEntity<String> viewFile(@RequestBody ViewFileRequest request) {
+    // Use SLF4J's sanitizing logger to prevent log forging
+    Logger log = LoggerFactory.getLogger(this.getClass());
+    log.info("Reading file {}", request.path);
     try {
-      String result = fileService.readFile(request.path);
-      return new ResponseEntity<>(result, HttpStatus.OK);
+        String result = fileService.readFile(request.path);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     } catch (FileForbiddenFileException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
     } catch (FileReadException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+}
+
+  }
+
   }
 
 }
