@@ -31,11 +31,11 @@ public class MainController {
   @Autowired
   private FileService fileService;
 
-  @RequestMapping(method=RequestMethod.POST, value="/test-domain", consumes="application/json")
+@RequestMapping(method=RequestMethod.POST, value="/test-domain", consumes="application/json")
   public ResponseEntity<String> testDomain(@RequestBody DomainTestRequest request) {
-    log.info("Testing domain " + request.domainName);
+    log.info("Testing domain {}", request.getDomainName());
     try {
-      String result = domainTestService.testDomain(request.domainName);
+      String result = domainTestService.testDomain(request.getSanitizedDomainName());
       return new ResponseEntity<>(result, HttpStatus.OK);
     } catch(InvalidDomainException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -44,6 +44,10 @@ public class MainController {
     } catch(Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+}
+
   }
 
   @RequestMapping(method=RequestMethod.POST, value="/test-website", consumes="application/json")
@@ -55,17 +59,21 @@ public class MainController {
 
 @RequestMapping(method=RequestMethod.POST, value="/view-file", consumes="application/json")
 public ResponseEntity<String> viewFile(@RequestBody ViewFileRequest request) {
-    // Use SLF4J's sanitizing logger to prevent log forging
-    Logger log = LoggerFactory.getLogger(this.getClass());
-    log.info("Reading file {}", request.path);
+    // Sanitize the input to prevent path traversal and command injection
+    String safePath = Encode.forHtml(request.path);
+    log.info("Reading file " + safePath);
     try {
-        String result = fileService.readFile(request.path);
-        return new ResponseEntity<>(result, HttpStatus.OK);
+        String result = fileService.readFile(safePath);
+        // Sanitize the output to prevent XSS attacks
+        String safeResult = StringEscapeUtils.escapeHtml4(result);
+        return new ResponseEntity<>(safeResult, HttpStatus.OK);
     } catch (FileForbiddenFileException e) {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
     } catch (FileReadException e) {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+}
+
 }
 
   }
