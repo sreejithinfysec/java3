@@ -58,17 +58,21 @@ public ResponseEntity<String> testDomain(@RequestBody DomainTestRequest request)
 
 @RequestMapping(method=RequestMethod.POST, value="/view-file", consumes="application/json")
 public ResponseEntity<String> viewFile(@RequestBody ViewFileRequest request) {
-    // Use SLF4J's sanitizing logger to prevent log forging
-    Logger log = LoggerFactory.getLogger(this.getClass());
-    log.info("Reading file {}", request.path);
+    // Sanitize the input to prevent path traversal and command injection
+    String safePath = Encode.forHtml(request.path);
+    log.info("Reading file " + safePath);
     try {
-        String result = fileService.readFile(request.path);
-        return new ResponseEntity<>(result, HttpStatus.OK);
+        String result = fileService.readFile(safePath);
+        // Sanitize the output to prevent XSS attacks
+        String safeResult = StringEscapeUtils.escapeHtml4(result);
+        return new ResponseEntity<>(safeResult, HttpStatus.OK);
     } catch (FileForbiddenFileException e) {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
     } catch (FileReadException e) {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+}
+
 }
 
   }
