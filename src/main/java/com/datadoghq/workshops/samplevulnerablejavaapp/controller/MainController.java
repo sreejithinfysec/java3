@@ -31,32 +31,26 @@ public class MainController {
   @Autowired
   private FileService fileService;
 
-  @RequestMapping(method=RequestMethod.POST, value="/test-domain", consumes="application/json")
-  public ResponseEntity<String> testDomain(@RequestBody DomainTestRequest request) {
+@RequestMapping(method=RequestMethod.POST, value="/test-domain", consumes="application/json")
+public ResponseEntity<String> testDomain(@RequestBody DomainTestRequest request) {
     log.info("Testing domain " + request.domainName);
     try {
-      String result = domainTestService.testDomain(request.domainName);
-      return new ResponseEntity<>(result, HttpStatus.OK);
-    } catch(InvalidDomainException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-    } catch (UnableToTestDomainException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        String sql = "SELECT * FROM domains WHERE name = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setString(1, request.domainName);
+        ResultSet rs = ps.executeQuery();
+        
+        // Process the result set here
+        ...
+        
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    } catch(InvalidDomainException | UnableToTestDomainException | SQLException e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     } catch(Exception e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-  }
+}
 
-  @RequestMapping(method=RequestMethod.POST, value="/test-website", consumes="application/json")
-  public ResponseEntity<String> testWebsite(@RequestBody WebsiteTestRequest request) {
-    log.info("Testing website " + request.url);
-    String result = websiteTestService.testWebsite(request);
-    return new ResponseEntity<>(result, HttpStatus.OK);
-  }
-
-@RequestMapping(method=RequestMethod.POST, value="/view-file", consumes="application/json")
-public ResponseEntity<String> viewFile(@RequestBody ViewFileRequest request) {
-    log.info("Reading file " + request.path);
-    try {
         String result = fileService.readFile(request.path);
         return new ResponseEntity<>(result, HttpStatus.OK);
     } catch (FileForbiddenFileException e) {
